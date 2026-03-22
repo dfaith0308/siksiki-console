@@ -6,6 +6,12 @@ import { updateOrderPaymentStatus } from '@/lib/orders'
 import type { PaymentStatus } from '@/types'
 
 export default function OrderPaymentStatusForm({ orderId, currentStatus }: { orderId: string; currentStatus: PaymentStatus }) {
+
+  // 👉 이거 추가 (핵심)
+  if (typeof window === 'undefined') {
+    return null
+  }
+
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [status, setStatus] = useState<PaymentStatus>(currentStatus)
