@@ -1,5 +1,4 @@
-export const dynamic = 'force-static'
-export const revalidate = 0
+export const dynamic = 'force-dynamic'
 
 import { Suspense } from 'react'
 import Link from 'next/link'

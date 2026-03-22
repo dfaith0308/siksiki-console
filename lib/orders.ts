@@ -28,7 +28,10 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
     const up = Number(item.unit_price), sp = Number(item.supply_price)
     const sales_amount = Number((qty * up).toFixed(2))
     const cost_amount  = Number((qty * sp).toFixed(2))
-    return { product_id: item.product_id, qty, unit_price: up, supply_price: sp, sales_amount, cost_amount, margin_amount: Number((sales_amount - cost_amount).toFixed(2)) }
+    return {
+      product_id: item.product_id, qty, unit_price: up, supply_price: sp,
+      sales_amount, cost_amount, margin_amount: Number((sales_amount - cost_amount).toFixed(2))
+    }
   })
 
   const total_sales  = Number(items.reduce((s, i) => s + i.sales_amount, 0).toFixed(2))
@@ -42,7 +45,9 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
   })
   if (error) throw new Error(error.message)
 
-  revalidatePath('/orders'); revalidatePath('/dashboard'); revalidatePath(`/customers/${input.customer_id}`)
+  revalidatePath('/orders')
+  revalidatePath('/dashboard')
+  revalidatePath(`/customers/${input.customer_id}`)
   return data as Order
 }
 
@@ -54,25 +59,40 @@ export async function updateOrderPaymentStatus(orderId: string, paymentStatus: '
   if (error) throw new Error(error.message)
   const admin = createSupabaseAdminClient()
   await admin.rpc('update_receivable', { p_customer_id: order.customer_id })
-  revalidatePath('/orders'); revalidatePath('/dashboard'); revalidatePath(`/customers/${order.customer_id}`)
+  revalidatePath('/orders')
+  revalidatePath('/dashboard')
+  revalidatePath(`/customers/${order.customer_id}`)
 }
 
-export async function getOrders(params?: { customerId?: string; from?: string; to?: string; paymentStatus?: string; limit?: number }): Promise<Order[]> {
-   returnp [] = createSupabaseServerClient()
-  let q = supabase.from('orders').select('*, customers(id,name), order_items(*, products(id,name))').order('order_date', { ascending: false })
+export async function getOrders(params?: {
+  customerId?: string
+  from?: string
+  to?: string
+  paymentStatus?: string
+  limit?: number
+}): Promise<Order[]> {
+  const supabase = createSupabaseServerClient()
+  let q = supabase
+    .from('orders')
+    .select('*, customers(id,name), order_items(*, products(id,name))')
+    .order('order_date', { ascending: false })
   if (params?.customerId)    q = q.eq('customer_id', params.customerId)
   if (params?.from)          q = q.gte('order_date', params.from)
   if (params?.to)            q = q.lte('order_date', params.to)
   if (params?.paymentStatus) q = q.eq('payment_status', params.paymentStatus)
   if (params?.limit)         q = q.limit(params.limit)
-//  const { data, error } = await q
-//  if (error) throw new Error(error.message)
-//  return data ?? []
-//} 이코드 나중에 되살리기 아래 두줄은 삭제하기
+  const { data, error } = await q
+  if (error) throw new Error(error.message)
+  return data ?? []
+}
 
 export async function getOrderById(id: string): Promise<Order> {
-  retrun null = createSupabaseServerClient()
-  const { data, error } = await supabase.from('orders').select('*, customers(*), order_items(*, products(*))').eq('id', id).single()
+  const supabase = createSupabaseServerClient()
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*, customers(*), order_items(*, products(*))')
+    .eq('id', id)
+    .single()
   if (error) throw new Error(error.message)
   return data
 }
@@ -84,5 +104,7 @@ export async function deleteOrder(id: string): Promise<void> {
   const admin = createSupabaseAdminClient()
   const { error } = await admin.rpc('delete_order_transactional', { p_order_id: id })
   if (error) throw new Error(error.message)
-  revalidatePath('/orders'); revalidatePath('/dashboard'); revalidatePath(`/customers/${order.customer_id}`)
+  revalidatePath('/orders')
+  revalidatePath('/dashboard')
+  revalidatePath(`/customers/${order.customer_id}`)
 }
