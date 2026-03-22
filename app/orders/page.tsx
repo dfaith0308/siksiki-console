@@ -1,7 +1,5 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
-import { getOrders } from '@/lib/orders'
-import { getCustomers } from '@/lib/customers'
 import { fmtAbbr, fmtNum, fmtDate } from '@/components/ui/Number'
 import { PaymentBadge } from '@/components/ui/Badge'
 import { TableSkeleton } from '@/components/ui/Feedback'
