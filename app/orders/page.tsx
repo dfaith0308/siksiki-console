@@ -1,3 +1,6 @@
+export const dynamic = 'force-static'
+export const revalidate = 0
+
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { fmtAbbr, fmtNum, fmtDate } from '@/components/ui/Number'
