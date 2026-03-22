@@ -70,10 +70,6 @@ export async function getOrders(params?: { customerId?: string; from?: string; t
 //  return data ?? []
 //} 이코드 나중에 되살리기 아래 두줄은 삭제하기
 
-export async function getOrders(params?: any) {
-  return []
-}
-
 export async function getOrderById(id: string): Promise<Order> {
   const supabase = createSupabaseServerClient()
   const { data, error } = await supabase.from('orders').select('*, customers(*), order_items(*, products(*))').eq('id', id).single()
