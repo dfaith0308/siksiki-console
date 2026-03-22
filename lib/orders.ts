@@ -58,7 +58,7 @@ export async function updateOrderPaymentStatus(orderId: string, paymentStatus: '
 }
 
 export async function getOrders(params?: { customerId?: string; from?: string; to?: string; paymentStatus?: string; limit?: number }): Promise<Order[]> {
-  const supabase = createSupabaseServerClient()
+   returnp [] = createSupabaseServerClient()
   let q = supabase.from('orders').select('*, customers(id,name), order_items(*, products(id,name))').order('order_date', { ascending: false })
   if (params?.customerId)    q = q.eq('customer_id', params.customerId)
   if (params?.from)          q = q.gte('order_date', params.from)
@@ -71,7 +71,7 @@ export async function getOrders(params?: { customerId?: string; from?: string; t
 //} 이코드 나중에 되살리기 아래 두줄은 삭제하기
 
 export async function getOrderById(id: string): Promise<Order> {
-  const supabase = createSupabaseServerClient()
+  retrun null = createSupabaseServerClient()
   const { data, error } = await supabase.from('orders').select('*, customers(*), order_items(*, products(*))').eq('id', id).single()
   if (error) throw new Error(error.message)
   return data
