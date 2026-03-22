@@ -7,10 +7,8 @@ import { PaymentBadge } from '@/components/ui/Badge'
 import { TableSkeleton } from '@/components/ui/Feedback'
 
 async function OrderListContent({ searchParams }: { searchParams: Record<string,string> }) {
-  const [orders, customers] = await Promise.all([
-    getOrders({ from:searchParams.from, to:searchParams.to, customerId:searchParams.customer, paymentStatus:searchParams.payment_status, limit:200 }),
-    getCustomers(),
-  ])
+const orders: any[] = []
+const customers: any[] = []
   const totalSales  = orders.reduce((s,o)=>s+Number(o.total_sales),0)
   const totalCost   = orders.reduce((s,o)=>s+Number(o.total_cost),0)
   const totalMargin = orders.reduce((s,o)=>s+Number(o.total_margin),0)
