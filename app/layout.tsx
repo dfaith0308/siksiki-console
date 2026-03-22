@@ -1,12 +1,21 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { createSupabaseServerClient } from '@/lib/supabase'
+import Sidebar from '@/components/Sidebar'
 
 export const metadata: Metadata = {
   title: '식식이 콘솔',
   description: 'B2B 식자재 공급 CRM + 수주관리',
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  let user = null
+  try {
+    const supabase = createSupabaseServerClient()
+    const { data } = await supabase.auth.getUser()
+    user = data.user
+  } catch {}
+
   return (
     <html lang="ko">
       <head>
@@ -17,7 +26,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {user ? (
+          <div className="app-shell">
+            <Sidebar user={user} />
+            <main className="app-main">{children}</main>
+          </div>
+        ) : (
+          <>{children}</>
+        )}
+      </body>
     </html>
   )
 }
