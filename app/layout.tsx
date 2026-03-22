@@ -1,20 +1,27 @@
-import type { Metadata } from 'next'
+'use client'
+
 import './globals.css'
-import { createSupabaseServerClient } from '@/lib/supabase'
+import { useState, useEffect } from 'react'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import Sidebar from '@/components/Sidebar'
+import { usePathname } from 'next/navigation'
 
-export const metadata: Metadata = {
-  title: '식식이 콘솔',
-  description: 'B2B 식자재 공급 CRM + 수주관리',
-}
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<null | { id: string; email?: string }>(null)
+  const supabase = createClientComponentClient()
+  const pathname = usePathname()
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  let user = null
-  try {
-    const supabase = createSupabaseServerClient()
-    const { data } = await supabase.auth.getUser()
-    user = data.user
-  } catch {}
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user)
+    })
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+    return () => listener.subscription.unsubscribe()
+  }, [])
+
+  const isLoginPage = pathname === '/login'
 
   return (
     <html lang="ko">
@@ -27,9 +34,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body>
-        {user ? (
+        {user && !isLoginPage ? (
           <div className="app-shell">
-            <Sidebar user={user} />
+            <Sidebar user={user as never} />
             <main className="app-main">{children}</main>
           </div>
         ) : (
