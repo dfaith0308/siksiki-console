@@ -4,28 +4,16 @@ import { revalidatePath } from 'next/cache'
 import { createSupabaseServerClient } from '@/lib/supabase'
 import type { Customer, CustomerGrade, CustomerStatus, CustomerType } from '@/types'
 
-//export async function getCustomers(): Promise<Customer[]> {
-//  const supabase = createSupabaseServerClient()
-//  const { data, error } = await supabase.from('customers').select('*').order('name')
-//  if (error) throw new Error(error.message)
-//  return data ?? []
-//} 14~번 나중에 삭제할 것
-
-export async function getCustomers() {
+async function getCurrentUserEmail(): Promise<string | null> {
   const supabase = createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  return user?.email ?? null
+}
 
-  const { data, error } = await supabase
-    .from('customers')
-    .select('*')
-
-  console.log('customers data:', data)
-  console.log('customers error:', error)
-
-  if (error) {
-    console.error(error)
-    return []
-  }
-
+export async function getCustomers(): Promise<Customer[]> {
+  const supabase = createSupabaseServerClient()
+  const { data, error } = await supabase.from('customers').select('*').order('name')
+  if (error) throw new Error(error.message)
   return data ?? []
 }
 
@@ -42,16 +30,29 @@ export async function createCustomer(input: {
   status?: CustomerStatus; grade?: CustomerGrade
 }): Promise<Customer> {
   const supabase = createSupabaseServerClient()
+  const email = await getCurrentUserEmail()
   const { data, error } = await supabase
     .from('customers')
-    .insert({ name: input.name, type: input.type, phone: input.phone ?? null, business_number: input.business_number ?? null, industry: input.industry ?? null, status: input.status ?? 'active', grade: input.grade ?? 'normal' })
+    .insert({
+      name: input.name, type: input.type,
+      phone: input.phone ?? null,
+      business_number: input.business_number ?? null,
+      industry: input.industry ?? null,
+      status: input.status ?? 'active',
+      grade: input.grade ?? 'normal',
+      created_by: email,
+    })
     .select().single()
   if (error) throw new Error(error.message)
   revalidatePath('/customers')
   return data
 }
 
-export async function updateCustomer(id: string, input: Partial<{ name: string; type: CustomerType; phone: string; business_number: string; industry: string; status: CustomerStatus; grade: CustomerGrade }>): Promise<Customer> {
+export async function updateCustomer(id: string, input: Partial<{
+  name: string; type: CustomerType; phone: string
+  business_number: string; industry: string
+  status: CustomerStatus; grade: CustomerGrade
+}>): Promise<Customer> {
   const supabase = createSupabaseServerClient()
   const { data, error } = await supabase.from('customers').update(input).eq('id', id).select().single()
   if (error) throw new Error(error.message)
