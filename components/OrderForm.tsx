@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useTransition, useRef } from 'react'
+import { useState, useCallback, useTransition, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createOrder, getAutofillPrice } from '@/lib/orders'
 import { fmtNum } from '@/components/ui/Number'
@@ -13,6 +13,98 @@ function recalc(l: Line): Line {
   return { ...l, sales_amount:s, cost_amount:c, margin_amount:Number((s-c).toFixed(2)) }
 }
 function newLine(): Line { return { _id:crypto.randomUUID(), product_id:'', qty:1, unit_price:0, supply_price:0, sales_amount:0, cost_amount:0, margin_amount:0, _loading:false } }
+
+// 거래처 검색 자동완성 컴포넌트
+function CustomerSearch({ customers, value, onChange, autoFocus }: {
+  customers: Customer[]
+  value: string
+  onChange: (id: string) => void
+  autoFocus?: boolean
+}) {
+  const selected = customers.find(c => c.id === value)
+  const [query, setQuery] = useState(selected?.name ?? '')
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  const filtered = query.trim() === ''
+    ? customers
+    : customers.filter(c => c.name.toLowerCase().includes(query.toLowerCase()))
+
+  useEffect(() => {
+    setQuery(selected?.name ?? '')
+  }, [value, selected?.name])
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  function handleSelect(c: Customer) {
+    onChange(c.id)
+    setQuery(c.name)
+    setOpen(false)
+  }
+
+  function handleInput(e: React.ChangeEvent<HTMLInputElement>) {
+    setQuery(e.target.value)
+    setOpen(true)
+    if (e.target.value === '') onChange('')
+  }
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <input
+        type="text"
+        value={query}
+        onChange={handleInput}
+        onFocus={() => setOpen(true)}
+        placeholder="거래처명 검색..."
+        className="form-input"
+        autoFocus={autoFocus}
+        autoComplete="off"
+      />
+      {open && filtered.length > 0 && (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
+          background: 'var(--c-white)', border: '1px solid var(--c-border)',
+          borderRadius: 'var(--r-md)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          maxHeight: 220, overflowY: 'auto', marginTop: 2,
+        }}>
+          {filtered.map(c => (
+            <div
+              key={c.id}
+              onMouseDown={() => handleSelect(c)}
+              style={{
+                padding: '8px 12px', cursor: 'pointer', fontSize: '0.85rem',
+                background: c.id === value ? 'var(--c-primary-light)' : 'transparent',
+                color: c.id === value ? 'var(--c-primary)' : 'var(--c-text)',
+                fontWeight: c.id === value ? 700 : 400,
+              }}
+              onMouseEnter={e => { if (c.id !== value) (e.target as HTMLDivElement).style.background = 'var(--c-surf)' }}
+              onMouseLeave={e => { if (c.id !== value) (e.target as HTMLDivElement).style.background = 'transparent' }}
+            >
+              {c.name}
+              {c.industry && <span style={{ fontSize: '0.75rem', color: 'var(--c-text3)', marginLeft: 8 }}>{c.industry}</span>}
+            </div>
+          ))}
+        </div>
+      )}
+      {open && filtered.length === 0 && query.trim() !== '' && (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
+          background: 'var(--c-white)', border: '1px solid var(--c-border)',
+          borderRadius: 'var(--r-md)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          padding: '12px', fontSize: '0.82rem', color: 'var(--c-text3)', marginTop: 2,
+        }}>
+          검색 결과 없음
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function OrderForm({ customers, products, defaultCustomerId }: { customers:Customer[]; products:Product[]; defaultCustomerId?:string }) {
   const router = useRouter()
@@ -85,10 +177,12 @@ export default function OrderForm({ customers, products, defaultCustomerId }: { 
         <div style={{ padding:'16px 20px', display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr', gap:14 }}>
           <div>
             <label className="form-label">거래처 <span style={{color:'var(--c-danger)'}}>*</span></label>
-            <select value={customerId} onChange={e=>handleCustomerChange(e.target.value)} className="form-select" required autoFocus={!defaultCustomerId}>
-              <option value="">거래처 선택</option>
-              {customers.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <CustomerSearch
+              customers={customers}
+              value={customerId}
+              onChange={handleCustomerChange}
+              autoFocus={!defaultCustomerId}
+            />
           </div>
           <div>
             <label className="form-label">주문일 <span style={{color:'var(--c-danger)'}}>*</span></label>
