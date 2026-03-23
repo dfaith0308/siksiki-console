@@ -204,7 +204,7 @@ export default function OrderForm({ customers, products, defaultCustomerId }: { 
         </div>
       </div>
 
-      <div className="card" style={{ overflow:'hidden' }}>
+      <div className="card" style={{ overflow:'visible' }}>
         <div className="section-head">
           <span className="section-title">주문 품목</span>
           <button type="button" onClick={addLine} style={{ fontSize:'0.75rem', color:'var(--c-primary)', background:'none', border:'none', cursor:'pointer', fontWeight:700, fontFamily:'inherit' }}>+ 품목 추가</button>
