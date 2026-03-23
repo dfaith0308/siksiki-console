@@ -16,7 +16,13 @@ export async function middleware(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, {
+              ...options,
+              // 세션을 7일간 유지
+              maxAge: 60 * 60 * 24 * 7,
+              sameSite: 'lax',
+              secure: true,
+            })
           )
         },
       },
@@ -35,11 +41,11 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse
   }
 
-  //if (!user) {
-  //  const url = request.nextUrl.clone()
-  //  url.pathname = '/login'
-  //  return NextResponse.redirect(url)
-  //} 
+  if (!user) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
 
   return supabaseResponse
 }

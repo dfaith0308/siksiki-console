@@ -1,36 +1,44 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const supabase = createClientComponentClient()
   const router   = useRouter()
-  const [email,    setEmail]    = useState('')
-  const [password, setPassword] = useState('')
-  const [error,    setError]    = useState('')
-  const [loading,  setLoading]  = useState(false)
+  const [email,      setEmail]      = useState('')
+  const [password,   setPassword]   = useState('')
+  const [remember,   setRemember]   = useState(false)
+  const [error,      setError]      = useState('')
+  const [loading,    setLoading]    = useState(false)
+
+  // 저장된 이메일 불러오기
+  useEffect(() => {
+    const saved = localStorage.getItem('saved_email')
+    if (saved) { setEmail(saved); setRemember(true) }
+  }, [])
 
   async function handleLogin(e: React.FormEvent) {
-  e.preventDefault()
-  setLoading(true)
-  setError('')
+    e.preventDefault()
+    setLoading(true); setError('')
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  })
+    if (remember) {
+      localStorage.setItem('saved_email', email)
+    } else {
+      localStorage.removeItem('saved_email')
+    }
 
-  if (error) {
-    setError('이메일 또는 비밀번호가 올바르지 않습니다.')
-    setLoading(false)
-  } else {
-    console.log('로그인 성공', data)
-    router.push('/dashboard')
-    router.refresh()
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+
+    if (error) {
+      setError('이메일 또는 비밀번호가 올바르지 않습니다.')
+      setLoading(false)
+    } else {
+      router.push('/dashboard')
+      router.refresh()
+    }
   }
-}
 
   return (
     <div style={{ minHeight:'100vh', background:'var(--c-bg)', display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
@@ -55,6 +63,18 @@ export default function LoginPage() {
             <div>
               <label className="form-label">비밀번호</label>
               <input type="password" value={password} onChange={e=>setPassword(e.target.value)} required className="form-input" placeholder="••••••••" autoComplete="current-password" />
+            </div>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <input
+                type="checkbox"
+                id="remember"
+                checked={remember}
+                onChange={e=>setRemember(e.target.checked)}
+                style={{ width:15, height:15, cursor:'pointer', accentColor:'var(--c-primary)' }}
+              />
+              <label htmlFor="remember" style={{ fontSize:'0.8rem', color:'var(--c-text2)', cursor:'pointer', userSelect:'none' }}>
+                이메일 저장
+              </label>
             </div>
             {error && <div className="alert-banner alert-r"><span>⚠</span><span>{error}</span></div>}
             <button type="submit" disabled={loading} className="btn btn-primary btn-lg" style={{ width:'100%', marginTop:4 }}>
